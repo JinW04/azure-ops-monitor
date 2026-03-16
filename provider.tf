@@ -38,3 +38,14 @@ resource "azurerm_role_assignment" "monitor_role" {
   role_definition_name = "Log Analytics Contributor" 
   principal_id         = azurerm_user_assigned_identity.monitor_identity.principal_id
 }
+
+# Output the Database ID
+output "workspace_id" {
+  value = azurerm_log_analytics_workspace.monitor_law.workspace_id
+}
+
+# Output the Database Password (SENSITIVE)
+output "workspace_key" {
+  value     = azurerm_log_analytics_workspace.monitor_law.primary_shared_key
+  sensitive = true
+}
