@@ -49,3 +49,22 @@ output "workspace_key" {
   value     = azurerm_log_analytics_workspace.monitor_law.primary_shared_key
   sensitive = true
 }
+
+# "Emergency Contact List" for alerts
+resource "azurerm_monitor_action_group" "email_alert" {
+  name                = "ag-earthquake-alerts"
+  resource_group_name = azurerm_resource_group.monitor_rg.name
+  short_name          = "QuakeAlert"
+
+  email_receiver {
+    name                    = "SendToAdminEmail"
+    email_address           = "jinwongsurin@gmail.com" 
+    use_common_alert_schema = true
+  }
+
+  sms_receiver {
+    name         = "SendToAdminText"
+    country_code = "47"            # 47 = Norge
+    phone_number = "46310668"
+  }
+}
