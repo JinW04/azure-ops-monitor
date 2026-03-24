@@ -68,3 +68,31 @@ resource "azurerm_monitor_action_group" "email_alert" {
     phone_number = "46310668"
   }
 }
+
+# "Trigger" that looks for earthquakes in database
+resource "azurerm_monitor_scheduled_query_rules_alert_v2" "quake_alert_rule" {
+  name                = "High-Magnitude-Earthquake-Alert"
+  resource_group_name = azurerm_resource_group.monitor_rg.name
+  location            = azurerm_resource_group.monitor_rg.location
+  scopes              = [azurerm_log_analytics_workspace.monitor_law.id]
+  description         = "Fires when an earthquake > 7.0 is detected"
+  severity            = 1
+  evaluation_frequency= "PT5M" # Checks the database every 5 minutes
+  window_duration     = "PT5M" # Looks at the last 5 minutes of data
+
+  criteria {
+    # KQL query asking the database for earthquakes >= 7.0
+    query                   = <<-QUERY
+      EarthquakeData_CL
+      | where Magnitude_d >= 7.0
+    QUERY
+    time_aggregation_method = "Count"
+    threshold               = 0
+    operator                = "GreaterThan"
+  }
+
+  action {
+    # Connects the Rule to the Action Group
+    action_groups = [azurerm_monitor_action_group.email_alert.id]
+  }
+}
