@@ -7,11 +7,9 @@ import hmac
 import base64
 
 # --- 1. AZURE CREDENTIALS ---
-# 👇 HUSK Å BYTTE UT DISSE MED DINE EGNE IGJEN 👇
 WORKSPACE_ID = "WORKSPACE_ID"
 WORKSPACE_KEY = "WORKSPACE_KEY"
 
-# NB: Pass på at det ikke er noen mellomrom inni hermetegnene her:
 LOG_TYPE = "MockNocData" 
 
 # --- 2. SECURITY SIGNATURE ---
@@ -31,7 +29,6 @@ def post_data(body):
     resource = '/api/logs'
     rfc1123date = datetime.datetime.now(datetime.timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
     
-    # Endring: Sikrer at vi teller faktiske bytes for sikkerhetssignaturen
     body_bytes = body.encode('utf-8')
     content_length = len(body_bytes)
     
@@ -45,14 +42,12 @@ def post_data(body):
         'x-ms-date': rfc1123date
     }
 
-    # Sender body_bytes i stedet for ren tekst
     response = requests.post(uri, data=body_bytes, headers=headers)
     
     if (response.status_code >= 200 and response.status_code <= 299):
         print(f"✅ Suksess! NOC-data sendt til Azure. Statuskode: {response.status_code}")
     else:
         print(f"❌ Feil under sending: {response.status_code}")
-        # Endring: Skriver ut NØYAKTIG hva Azure klager på
         print(f"🔍 Azure sier: {response.text}") 
 
 # --- 4. GENERATE MOCK NOC DATA ---
@@ -75,6 +70,6 @@ def generate_noc_data():
     body = json.dumps(payload)
     post_data(body)
 
-# --- 5. START SCRIPTET ---
+# --- 5. STARTS SCRIPT ---
 if __name__ == "__main__":
     generate_noc_data()
