@@ -1,4 +1,5 @@
 import json
+import random
 import requests
 import datetime
 import hashlib
@@ -6,11 +7,14 @@ import hmac
 import base64
 
 # --- 1. AZURE CREDENTIALS ---
+# 👇 HUSK Å BYTTE UT DISSE MED DINE EGNE IGJEN 👇
 WORKSPACE_ID = "WORKSPACE_ID"
 WORKSPACE_KEY = "WORKSPACE_KEY"
-LOG_TYPE = "AzureCostData" # New table
 
-# --- 2. SECURITY SIGNATURE (The exact same from Earthquake script) ---
+# NB: Pass på at det ikke er noen mellomrom inni hermetegnene her:
+LOG_TYPE = "MockNocData" 
+
+# --- 2. SECURITY SIGNATURE ---
 def build_signature(date, content_length, method, content_type, resource):
     x_headers = 'x-ms-date:' + date
     string_to_hash = method + "\n" + str(content_length) + "\n" + content_type + "\n" + x_headers + "\n" + resource
@@ -26,7 +30,11 @@ def post_data(body):
     content_type = 'application/json'
     resource = '/api/logs'
     rfc1123date = datetime.datetime.now(datetime.timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
-    content_length = len(body)
+    
+    # Endring: Sikrer at vi teller faktiske bytes for sikkerhetssignaturen
+    body_bytes = body.encode('utf-8')
+    content_length = len(body_bytes)
+    
     signature = build_signature(rfc1123date, content_length, method, content_type, resource)
     uri = 'https://' + WORKSPACE_ID + '.ods.opinsights.azure.com' + resource + '?api-version=2016-04-01'
 
@@ -37,34 +45,36 @@ def post_data(body):
         'x-ms-date': rfc1123date
     }
 
-    response = requests.post(uri, data=body, headers=headers)
+    # Sender body_bytes i stedet for ren tekst
+    response = requests.post(uri, data=body_bytes, headers=headers)
+    
     if (response.status_code >= 200 and response.status_code <= 299):
-        print("✅ Success! Billing data sent to Azure Log Analytics.")
+        print(f"✅ Suksess! NOC-data sendt til Azure. Statuskode: {response.status_code}")
     else:
-        print(f"❌ Error: {response.status_code}")
+        print(f"❌ Feil under sending: {response.status_code}")
+        # Endring: Skriver ut NØYAKTIG hva Azure klager på
+        print(f"🔍 Azure sier: {response.text}") 
 
-# --- 4. FETCH AND MOCK BILLING DATA ---
-def get_billing_data():
-    print("Fetching daily Azure cost data...")
+# --- 4. GENERATE MOCK NOC DATA ---
+def generate_noc_data():
+    print("Mocker live NOC og FinOps-data...")
     
-    # MOCK DATA:
-    # Simulating two JSON records of daily cloud costs
-    cost_payload = [{
-        "Date": str(datetime.date.today()),
-        "ServiceName": "Azure Monitor",
-        "CostUSD": 0.45,
-        "Environment": "Production"
-    },
-    {
-        "Date": str(datetime.date.today()),
-        "ServiceName": "Log Analytics Workspace",
-        "CostUSD": 1.12,
-        "Environment": "Production"
-    }]
+    resources = ["LIM-FW-01", "Web-Server-Alpha", "DB-Server-Beta", "LogAnalytics-Workspace"]
+    payload = []
     
-    # Convert Python dictionary into a JSON string and sends it
-    body = json.dumps(cost_payload)
+    for res in resources:
+        record = {
+            "ResourceName": res,
+            "CPU_Percentage": round(random.uniform(5.0, 98.0), 2),
+            "Memory_Percentage": round(random.uniform(20.0, 85.0), 2),
+            "HourlyCost_USD": round(random.uniform(0.01, 2.50), 2),
+            "NetworkTraffic_MB": round(random.uniform(10, 500), 2)
+        }
+        payload.append(record)
+    
+    body = json.dumps(payload)
     post_data(body)
 
+# --- 5. START SCRIPTET ---
 if __name__ == "__main__":
-    get_billing_data()
+    generate_noc_data()
