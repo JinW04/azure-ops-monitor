@@ -1,0 +1,27 @@
+name: Azure NOC Data Sync
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:        # Let's you run it manually for testing
+
+jobs:
+  run-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sjekk ut kode
+        uses: actions/checkout@v3
+
+      - name: Sett opp Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Installer biblioteker
+        run: pip install requests
+
+      - name: Kjør NOC-skriptet
+        env:
+          WORKSPACE_ID: ${{ secrets.AZURE_WORKSPACE_ID }}
+          WORKSPACE_KEY: ${{ secrets.AZURE_WORKSPACE_KEY }}
+        run: python azure_billing.py
