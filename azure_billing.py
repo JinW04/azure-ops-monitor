@@ -9,10 +9,14 @@ import time
 import os
 
 # --- 1. AZURE CREDENTIALS ---
-WORKSPACE_ID = os.getenv('AZURE_WORKSPACE_ID', "AZURE_WORKSPACE_ID")
-WORKSPACE_KEY = os.getenv('AZURE_WORKSPACE_KEY', "AZURE_WORKSPACE_KEY")
+
+WORKSPACE_ID = os.getenv('AZURE_WORKSPACE_ID') or os.getenv('WORKSPACE_ID') or "LOCAL_ID"
+WORKSPACE_KEY = os.getenv('AZURE_WORKSPACE_KEY') or os.getenv('WORKSPACE_KEY') or "LOCAL_KEY"
 
 LOG_TYPE = "MockNocData" 
+
+
+IS_GITHUB_ACTIONS = os.getenv('GITHUB_ACTIONS') == 'true'
 
 # --- 2. SECURITY SIGNATURE ---
 def build_signature(date, content_length, method, content_type, resource):
@@ -54,9 +58,7 @@ def post_data(body):
 
 # --- 4. GENERATE AND LOOP DATA ---
 def start_noc_simulator():
-    print("🚀 NOC Simulator startet!")
-    print("Sender live-data til Azure hvert 30. sekund...")
-    print("Trykk Ctrl+C for å avslutte.")
+    print("NOC Simulator startet!")
     
     resources = ["LIM-FW-01", "Web-Server-Alpha", "DB-Server-Beta", "LogAnalytics-Workspace"]
     
@@ -76,7 +78,11 @@ def start_noc_simulator():
             body = json.dumps(payload)
             post_data(body)
             
-            # Venter i 30 sekunder før neste bølge med data
+            if IS_GITHUB_ACTIONS:
+                print("Kjører i GitHub Actions. Har sendt pakken, avslutter for å spare server-ressurser.")
+                break
+            
+            print("Lokal modus: Venter i 30 sekunder...")
             time.sleep(30)
             
     except KeyboardInterrupt:
