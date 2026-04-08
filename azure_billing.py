@@ -5,10 +5,12 @@ import datetime
 import hashlib
 import hmac
 import base64
+import time
+import os
 
 # --- 1. AZURE CREDENTIALS ---
-WORKSPACE_ID = "WORKSPACE_ID"
-WORKSPACE_KEY = "WORKSPACE_KEY"
+WORKSPACE_ID = os.getenv('AZURE_WORKSPACE_ID')
+WORKSPACE_KEY = os.getenv('AZURE_WORKSPACE_KEY')
 
 LOG_TYPE = "MockNocData" 
 
@@ -45,31 +47,41 @@ def post_data(body):
     response = requests.post(uri, data=body_bytes, headers=headers)
     
     if (response.status_code >= 200 and response.status_code <= 299):
-        print(f"✅ Suksess! NOC-data sendt til Azure. Statuskode: {response.status_code}")
+        print(f"✅ Suksess! NOC-data sendt kl. {datetime.datetime.now().strftime('%H:%M:%S')}. Status: {response.status_code}")
     else:
         print(f"❌ Feil under sending: {response.status_code}")
         print(f"🔍 Azure sier: {response.text}") 
 
-# --- 4. GENERATE MOCK NOC DATA ---
-def generate_noc_data():
-    print("Mocker live NOC og FinOps-data...")
+# --- 4. GENERATE AND LOOP DATA ---
+def start_noc_simulator():
+    print("🚀 NOC Simulator startet!")
+    print("Sender live-data til Azure hvert 30. sekund...")
+    print("Trykk Ctrl+C for å avslutte.")
     
     resources = ["LIM-FW-01", "Web-Server-Alpha", "DB-Server-Beta", "LogAnalytics-Workspace"]
-    payload = []
     
-    for res in resources:
-        record = {
-            "ResourceName": res,
-            "CPU_Percentage": round(random.uniform(5.0, 98.0), 2),
-            "Memory_Percentage": round(random.uniform(20.0, 85.0), 2),
-            "HourlyCost_USD": round(random.uniform(0.01, 2.50), 2),
-            "NetworkTraffic_MB": round(random.uniform(10, 500), 2)
-        }
-        payload.append(record)
-    
-    body = json.dumps(payload)
-    post_data(body)
+    try:
+        while True:
+            payload = []
+            for res in resources:
+                record = {
+                    "ResourceName": res,
+                    "CPU_Percentage": round(random.uniform(5.0, 98.0), 2),
+                    "Memory_Percentage": round(random.uniform(20.0, 85.0), 2),
+                    "HourlyCost_USD": round(random.uniform(0.01, 2.50), 2),
+                    "NetworkTraffic_MB": round(random.uniform(10, 500), 2)
+                }
+                payload.append(record)
+            
+            body = json.dumps(payload)
+            post_data(body)
+            
+            # Venter i 30 sekunder før neste bølge med data
+            time.sleep(30)
+            
+    except KeyboardInterrupt:
+        print("\n🛑 Simulator stoppet av bruker.")
 
 # --- 5. STARTS SCRIPT ---
 if __name__ == "__main__":
-    generate_noc_data()
+    start_noc_simulator()
