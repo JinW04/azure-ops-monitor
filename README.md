@@ -18,6 +18,10 @@ graph LR
 * **Secure Credentials:** All Azure API keys and Workspace IDs are stored securely using GitHub Actions Secrets and environment variables.
 * **Live Dashboards:** Data is visualized in Azure Workbooks using custom Kusto Query Language (KQL) to monitor CPU, Memory, Network Traffic, and Hourly Costs.
 
+## Images
+![NOC Dashboard View 1](images/NOC1.png)
+![NOC Dashboard View 2](images/NOC2.png)
+
 ## Tools used
 * **Language:** Python 3 (Requests, JSON, HMAC, Hashlib)
 * **Automation:** GitHub Actions (CI/CD)
